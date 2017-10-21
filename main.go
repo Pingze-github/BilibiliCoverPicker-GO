@@ -2,222 +2,130 @@ package main
 
 import (
 	"fmt"
-	"unsafe"
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"regexp"
+	"io/ioutil"
+	"errors"
 )
 
-var printl = fmt.Println
+type RetBody struct {
+	Status int
+	Raw string
+	Code int
+	Msg string
+	Data interface{}
+}
 
+// TODO 预览图应从后端中转，并做Refer等反反盗链处理
+// TODO 页面美化，移动端适配
+// TODO 实测以支持各种图片格式
 func main() {
-	a := "a"
-	fmt.Println(a, "hello, world")
-	a = "asdfghqwertqwertqweqrqweqtqqwtyyeuritoyusdghf"
-	fmt.Println(&a)
-	fmt.Println(unsafe.Sizeof(a))
+	server()
+}
 
-	p := &a;
-	printl("p",p)
-	fmt.Printf("%T",p) // 格式化打印
+func server() {
+	//全局设置为产品环境
+	gin.SetMode(gin.ReleaseMode)
+	// 端口
+	port := 666
+	//获得路由实例
+	router := gin.Default()
+	// 静态资源
+	router.StaticFile("/", "./public/index.html")
+	// 注册接口
+	//router.GET("/", IndexHandler)
+	router.GET("/pick", PickHandler)
+	// 启动服务
+	fmt.Println(`Server start @`, port)
+	router.Run(fmt.Sprintf(":%d", port))
+}
 
-	const (
-		s1 = iota
-		s2
-		s3
-	)
-	fmt.Println(s1, s2, s3)
-
-	const (
-		x1 = 2 * iota
-		x2
-		x3
-	)
-	fmt.Println(x1, x2, x3)
-
-	s := 'a'
-	fmt.Printf("%T", s)
-	printl()
-	printl(s)
-
-	p1 := &s
-	printl(p1)
-
-	// goto
-	var i = 0
-	LOOP_LABEL: if (i < 20) {
-		printl(i)
-		i++
-		goto LOOP_LABEL
+func CReturn(c *gin.Context, ret RetBody) {
+	if ret.Status == 0 {
+		ret.Status = http.StatusOK
 	}
-
-	// for
-	i = 0
-	for true {
-		if (i < 10) {
-			i++
-			printl(i)
-		} else {
-			break
+	if ret.Raw != "" {
+		c.Data(ret.Status, "text/plain", []byte(ret.Raw))
+	} else {
+		type JSONRet struct {
+			Code int `json:"Code"`
+			Msg string `json:"Msg"`
+			Data interface{}
 		}
-	}
-
-	outer := "foo"
-	foo := func() {
-		printl(outer)
-	}
-	foo()
-
-	sum(1, 2)
-	two(1, 2)
-
-	var c Circle // 新建对象
-	c.radius = 2
-	c.area() // 调用类方法
-
-	adder := createAdder()
-	fmt.Printf("%T", adder)
-	printl()
-	adder()
-	adder()
-	adder()
-
-/*	t1 := 1
-	t2 := "2"
-	t3 := t1 + t2 */
-	// t1 t2 不可加
-
-	arrayTest();
-
-	pointerTest();
-
-	structTest();
-
-	sliceTest();
-}
-
-func createAdder() func() int { // 匿名函数返回类型声明
-	i := 100
-	return func() int {
-		i++
-		printl(i)
-		return i
+		if ret.Msg == "" {ret.Msg = "操作成功"}
+		if ret.Data == "" {ret.Data = gin.H{}}
+		jsonRet := JSONRet{Code: ret.Code, Msg: ret.Msg, Data: ret.Data}
+		c.JSON(ret.Status, jsonRet)
 	}
 }
 
-func sum(num1, num2 int) int {
-	return num1 + num2
+func IndexHandler(c *gin.Context) {
+	CReturn(c, RetBody{Raw: "Index"})
 }
 
-func two(num1, num2 int) (int, int) {
-	return num1,num2
-}
-
-// 声明类
-type Circle struct {
-	radius float64
-}
-
-// 类方法
-func (c Circle) area () {
-	printl(c.radius * c.radius * 3.14)
-}
-
-func arrayTest() {
-	var arr [10] float32
-	arr2 := [5] int {1,2,3,4,5}
-	arr[4] = 1
-	fmt.Println(arr);
-	fmt.Println(arr2[1]);
-
-	var matrix =  [2][3] int {
-		{1, 2, 3},
-		{4, 5, 6},
+func PickHandler(c *gin.Context) {
+	value, exist := c.GetQuery("key")
+	if !exist {
+		CReturn(c, RetBody{Code: 1, Msg: "未提交Key"})
+		return
 	}
-	fmt.Println(matrix)
-	fmt.Println(matrix[0][1])
-
-	init := func (m [9]int) [9]int {
-		var i int
-		for i = 0; i < 9; i++ {
-			m[i] = i;
-		}
-		return m
+	// 析出av号
+	avid := pickAVID(value)
+	if avid == "" {
+		CReturn(c, RetBody{Code: 2, Msg: "提交的Key中不包含av号"})
+		return
 	}
-	var m2 [9] int // 不定长数组
-	fmt.Println("m2", m2)
-	var m3 = init(m2)
-	fmt.Println("m3", m3)
-	fmt.Println("m2", m2)
-	// m2作为参数传入函数，是值传递，m2 != m3
+	fmt.Println("检测到AV号:", avid)
+	// 根据avid获取封面地址
+	coverUrl, err := pickCoverUrl(avid)
+	if err != nil {
+		fmt.Println("尝试利用AV号", avid, "获取视频封面时错误：", err)
+		CReturn(c, RetBody{Code: 3, Msg: "获取视频封面时错误", Data: gin.H{"reason": fmt.Sprintf("%s", err)}})
+		return
+	}
+	CReturn(c, RetBody{Data: gin.H{"coverUrl": coverUrl, "avid": avid}})
 }
 
-func pointerTest() {
-	var a = 1
-	var p *int
-	p = &a
-	fmt.Println(p)
-	fmt.Println(*p)
-
-	var ptr *int
-	fmt.Println(ptr)
-	fmt.Println(ptr == nil)
+func pickAVID(value string) (avid string) {
+	var regAVID = regexp.MustCompile(`^((http|https)://www.bilibili.com/video/){0,1}(av){0,1}(\d{8})`)
+	matches := regAVID.FindStringSubmatch(value)
+	if len(matches) > 0 {
+		avid = matches[len(matches) - 1]
+	}
+	return
 }
 
-func structTest() {
-	type Book struct {
-		title string
-		author string
+func pickCoverUrl(avid string) (coverUrl string, err error) {
+	content, _, err := request(fmt.Sprintf("http://www.bilibili.com/video/av%s/", avid))
+	if err != nil {
+		return
 	}
-	var printBook = func (book Book) {
-		fmt.Println("title:", book.title)
-		fmt.Println("author:", book.author)
+	var regCover = regexp.MustCompile(`<img src="(//i\d{1}\.hdslb\.com/bfs/archive/\w+\.(jpg|png))" `)
+	matches := regCover.FindStringSubmatch(content)
+	if len(matches) > 0 {
+		coverUrl = fmt.Sprintf("http:%s", matches[1])
+	} else {
+		err = errors.New("no cover img label matched")
 	}
-	var book1 Book
-	book1.title = "挪威的森林"
-	book1.author = "村上春树"
-	printBook(book1)
+	return
 }
 
-func sliceTest() {
-	// 切片是可变长度的数组。
-
-	// 定义切片只需要不指定数组长度
-	var list []string
-	fmt.Println(list)
-
-	// 或者使用make，给出更多设置
-	var list2 = make([]string, 5, 10) // 初始长度5 最大长度10
-	fmt.Println(list2)
-	fmt.Println(unsafe.Sizeof(list2))
-
-	// 初始化
-	var list3 = []int{1,2,3}  // len = cap = 3
-	fmt.Println(list3)
-
-	// 从数组创建
-	var arr = [5]int{1, 2, 3, 4, 5}
-	var list4 = arr[:]
-	var list5 = arr[1:3]
-	fmt.Println(list4)
-	fmt.Println(list5)
-	fmt.Println(list == nil) //未初始化时nil（指针也是）
-	fmt.Println(len(list))
-	fmt.Println(len(list2))
-	fmt.Println(cap(list2))
-
-	// cap 容量 是slice的容积单位，cap值为一个单位，容量增加时，会增加一个cap的大小
-	// 默认cap=1
-
-	// append
-	//var sl = make([]int, 0, 1)
-	var sl [] int
-	sl = append(sl, 1)
-	sl = append(sl, 2, 3, 4)
-	fmt.Println(sl, cap(sl)) // cap 5
-	sl = append(sl, 5, 6, 7)
-	fmt.Println(sl, cap(sl)) // cap 10
-
-	var sl2 = make([]int, 10)
-	copy(sl2, sl) // sl => sl2
-	// sl2 不够大，有多大copy多大
-	fmt.Println(sl2)
-
+func request(url string) (content string, reader []byte, err error) {
+	fmt.Println(url)
+	res, errGet := http.Get(url)
+	if errGet != nil {
+		fmt.Println(errGet)
+		err = errors.New("http get failed")
+		return
+	}
+	defer res.Body.Close()
+	reader, errRead := ioutil.ReadAll(res.Body)
+	if errRead != nil {
+		fmt.Println(errRead)
+		err = errors.New("res body read failed")
+		return
+	}
+	content = string(reader)
+	return
 }

@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>Bilibili视频封面提取</title>
+    </head>
+    <style type="text/css">
+        #preview {display:none;}
+    </style>
+    <body>
+        <div id="inputer">
+            <input type="text" name="key" placeholder="请输入av号/视频链接">
+            <button>提取</button>
+        </div>
+        <div id="preview">
+            <p>av号：<span></span></p>
+            <p>图片链接：<a></a></p>
+            <p>图片预览：暂不显示</p>
+            <img/>
+        </div>
+    </body>
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script>
+        (function ($) {
+            $('#inputer button').click(function () {
+              var value = $('#inputer input').val();
+              if (!value) return alert('请先输入av号/视频链接');
+              $.get('/pick', {key: value}, function (response, status) {
+                if (!status) alert('请求结果失败');
+                if (response.Code === 0) {
+                  var coverUrl = response.Data.coverUrl;
+                  var avid = response.Data.avid;
+                  $('#preview p span').text(avid);
+                  $('#preview p a').attr('href', coverUrl);
+                  $('#preview p a').text(coverUrl);
+                  //$('#preview img').attr('src', coverUrl);
+                  $('#preview').css('display', 'block');
+                } else {
+                  alert('解析结果失败');
+                }
+              });
+            })
+        })($);
+    </script>
+</html>
