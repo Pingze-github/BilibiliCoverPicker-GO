@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"regexp"
 	"io/ioutil"
 	"errors"
+	"github.com/gin-gonic/gin"
 )
 
 type RetBody struct {
