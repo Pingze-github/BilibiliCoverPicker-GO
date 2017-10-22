@@ -46,7 +46,7 @@
             <div class="center-block" id="preview" style="display: none;">
                 <p>av号：<span></span></p>
                 <p>图片链接：<a></a></p>
-                <p>图片预览（点击查看大图）：</p>
+                <p>图片预览（点击查看原图）：</p>
                 <a href="#" class="thumbnail">
                     <img alt="预览图" />
                 </a>
@@ -62,6 +62,7 @@
             $inputer.find('button').click(function () {
               var value = $inputer.find('input').val();
               if (!value) return alert('请先输入av号/视频链接');
+              $preview.css('display', 'none');
               $.get('/pick', {key: value}, function (response, status) {
                 if (!status) alert('请求结果失败');
                 if (response.Code === 0) {
@@ -71,7 +72,7 @@
                   $preview.find('p>a').attr('href', coverUrl);
                   $preview.find('p>a').text(coverUrl);
                   $preview.find('img').attr('src', '/imgpipe?src=' + coverUrl + '@640w_400h.jpg');
-                  $preview.children('a').attr('href', 'http://' + location.host + '/imgpipe?src=' + coverUrl);
+                  $preview.children('a').attr('href', '/img?src=' + 'http://' + location.host + '/imgpipe?src=' + coverUrl);
                   $preview.css('display', 'block');
                 } else {
                   alert('解析结果失败');

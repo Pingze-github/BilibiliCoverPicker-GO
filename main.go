@@ -12,6 +12,7 @@ import (
 type RetBody struct {
 	Status int
 	String string
+	Html string
 	Raw []byte
 	ContentType string
 	Code int
@@ -35,6 +36,7 @@ func server() {
 	// 注册接口
 	//router.GET("/", IndexHandler)
 	router.GET("/pick", PickHandler)
+	router.GET("/img", ImgContainerHandler)
 	router.GET("/imgpipe", ImgPiperHandler)
 	// 启动服务
 	fmt.Println(`Server start @`, port)
@@ -47,6 +49,8 @@ func CReturn(c *gin.Context, ret RetBody) {
 	}
 	if ret.String != "" {
 		c.Data(ret.Status, "text/plain", []byte(ret.String))
+	} else if ret.Html != "" {
+		c.Data(ret.Status, "text/html", []byte(ret.Html))
 	} else if ret.Raw != nil {
 		if ret.ContentType == "" {
 			ret.ContentType = "text/plain"
@@ -103,6 +107,17 @@ func ImgPiperHandler(c *gin.Context) {
 		return
 	}
 	CReturn(c, RetBody{Raw: bytes, ContentType: "image/jpeg"})
+}
+
+func ImgContainerHandler(c *gin.Context) {
+	src, exist := c.GetQuery("src")
+	if !exist {
+		//c.Data(200, "text/html", []byte("<img src=\"http://174.138.71.148:666/imgpipe?src=http://i2.hdslb.com/bfs/archive/f2430f0ad1ae2edf7347e0f1b9d931dfc1d64742.jpg\"></img>"))
+		CReturn(c, RetBody{Code: 1, Msg: "未提交图片路径src"})
+		return
+	}
+	html := fmt.Sprintf("<img src=\"%s\"></img>", src)
+	CReturn(c, RetBody{Html: html})
 }
 
 func pickAVID(value string) (avid string) {
