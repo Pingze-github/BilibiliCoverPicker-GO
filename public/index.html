@@ -8,6 +8,14 @@
     <style type="text/css">
         #preview {
             padding-top: 20px;
+            padding-bottom: 5px;
+            padding-left: 5px;
+        }
+        .msg {
+            display: none;
+            padding-top: 20px;
+            padding-bottom: 5px;
+            padding-left: 5px;
         }
         #clear-btn {
             position: absolute;
@@ -17,6 +25,7 @@
             width: 24px;
             height: 24px;
             cursor: pointer;
+            color: #66AFE9;
         }
         @media (max-width: 768px) {
             #container {
@@ -55,6 +64,7 @@
                 </div>
                 <button class="btn btn-primary">提取</button>
             </div>
+            <div class="msg">正在提取……</div>
             <div class="center-block" id="preview" style="display: none;">
                 <p>av号：<span></span></p>
                 <p>图片链接：<a></a></p>
@@ -71,10 +81,12 @@
         (function ($) {
             var $inputer = $('#inputer');
             var $preview = $('#preview');
+            var $msg = $('.msg');
             $inputer.find('button').click(function () {
               var value = $inputer.find('input').val();
               if (!value) return alert('请先输入av号/视频链接');
               $preview.hide();
+              $msg.show();
               $.get('/pick', {key: value}, function (response, status) {
                 if (!status) alert('请求结果失败');
                 if (response.Code === 0) {
@@ -85,6 +97,7 @@
                   $preview.find('p>a').text(coverUrl);
                   $preview.find('img').attr('src', '/imgpipe?src=' + coverUrl + '@640w_400h.jpg');
                   $preview.children('a').attr('href', '/img?src=' + 'http://' + location.host + '/imgpipe?src=' + coverUrl);
+                  $msg.hide();
                   $preview.show();
                 } else {
                   alert('解析结果失败');
