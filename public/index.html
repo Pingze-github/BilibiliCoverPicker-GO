@@ -1,38 +1,78 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
     <head>
-        <title>Bilibili视频封面提取</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <title>bilibili视频封面提取</title>
     </head>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <style type="text/css">
-        #preview {display:none;}
+        #preview {
+            padding-top: 20px;
+        }
+        @media (max-width: 768px) {
+            #container {
+                padding-top: 15px;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            #inputer button {
+                width: 100%;
+            }
+        }
+        @media (min-width: 768px) {
+            #inputer {
+                padding: 30px 30px 30px 30px;
+                border-bottom: 1px solid lightgray;
+            }
+            #inputer input {
+                width: 500px;
+            }
+            #inputer button {
+                width: 100px;
+            }
+            #preview {
+                padding: 30px 30px 30px 30px;
+            }
+        }
     </style>
     <body>
-        <div id="inputer">
-            <input type="text" name="key" placeholder="请输入av号/视频链接">
-            <button>提取</button>
-        </div>
-        <div id="preview">
-            <p>av号：<span></span></p>
-            <p>图片链接：<a></a></p>
-            <p>图片预览：暂不显示</p>
-            <img/>
+        <div id="container">
+            <div id="inputer" class="form-inline">
+                <div class="form-group">
+                    <input class="form-control" type="text" name="key" placeholder="请输入av号/视频链接" autocomplete="off">
+                </div>
+                <button class="btn btn-primary">提取</button>
+            </div>
+            <div class="center-block" id="preview" style="display: none;">
+                <p>av号：<span></span></p>
+                <p>图片链接：<a></a></p>
+                <p>图片预览：</p>
+                <a href="#" class="thumbnail">
+                    <img alt="预览图" />
+                </a>
+            </div>
         </div>
     </body>
-    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script>
         (function ($) {
-            $('#inputer button').click(function () {
-              var value = $('#inputer input').val();
+            $inputer = $('#inputer');
+            $preview = $('#preview');
+            $inputer.find('button').click(function () {
+              var value = $inputer.find('input').val();
               if (!value) return alert('请先输入av号/视频链接');
               $.get('/pick', {key: value}, function (response, status) {
                 if (!status) alert('请求结果失败');
                 if (response.Code === 0) {
                   var coverUrl = response.Data.coverUrl;
                   var avid = response.Data.avid;
-                  $('#preview p span').text(avid);
-                  $('#preview p a').attr('href', coverUrl);
-                  $('#preview p a').text(coverUrl);
-                  //$('#preview img').attr('src', coverUrl);
-                  $('#preview').css('display', 'block');
+                  $preview.find('p>span').text(avid);
+                  $preview.find('p>a').attr('href', coverUrl);
+                  $preview.find('p>a').text(coverUrl);
+                  $preview.find('img').attr('src', '/imgpipe?src=' + coverUrl);
+                  $preview.children('a').attr('href', 'http://' + location.host + '/imgpipe?src=' + coverUrl);
+                  $preview.css('display', 'block');
                 } else {
                   alert('解析结果失败');
                 }
