@@ -9,6 +9,15 @@
         #preview {
             padding-top: 20px;
         }
+        #clear-btn {
+            position: absolute;
+            opacity: 0;
+            top: 5px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
         @media (max-width: 768px) {
             #container {
                 padding-top: 15px;
@@ -38,8 +47,11 @@
     <body>
         <div id="container">
             <div id="inputer" class="form-inline">
-                <div class="form-group">
+                <div class="form-group" style="position: relative">
                     <input class="form-control" type="text" name="key" placeholder="请输入av号/视频链接" autocomplete="off">
+                    <div id="clear-btn">
+                        <svg class="icon" style="vertical-align: middle;fill: currentColor;overflow: hidden;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3572"><path d="M141.443094 140.046911l20.683529-20.683529 722.773021 722.773021-20.683529 20.683529-722.773021-722.773021Z" p-id="3573"></path><path d="M141.443094 842.136403l722.773021-722.773021 20.683529 20.683529-722.773021 722.773021-20.683529-20.683529Z" p-id="3574"></path></svg>
+                    </div>
                 </div>
                 <button class="btn btn-primary">提取</button>
             </div>
@@ -57,12 +69,12 @@
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script>
         (function ($) {
-            $inputer = $('#inputer');
-            $preview = $('#preview');
+            var $inputer = $('#inputer');
+            var $preview = $('#preview');
             $inputer.find('button').click(function () {
               var value = $inputer.find('input').val();
               if (!value) return alert('请先输入av号/视频链接');
-              $preview.css('display', 'none');
+              $preview.hide();
               $.get('/pick', {key: value}, function (response, status) {
                 if (!status) alert('请求结果失败');
                 if (response.Code === 0) {
@@ -73,11 +85,29 @@
                   $preview.find('p>a').text(coverUrl);
                   $preview.find('img').attr('src', '/imgpipe?src=' + coverUrl + '@640w_400h.jpg');
                   $preview.children('a').attr('href', '/img?src=' + 'http://' + location.host + '/imgpipe?src=' + coverUrl);
-                  $preview.css('display', 'block');
+                  $preview.show();
                 } else {
                   alert('解析结果失败');
                 }
               });
+            });
+            var $clear = $('#clear-btn');
+            var $input = $inputer.find('input');
+            $input.keyup(function (e) {
+              if (e.which === 13) $inputer.find('button').click();
+              else {
+                if ($input.val().length > 0) $clear.css('opacity', 1);
+                else $clear.css('opacity', 0);
+              }
+            });
+            $input.blur(function () {
+              $clear.css('opacity', 0);
+            });
+            $input.focus(function () {
+              if ($input.val().length > 0) $clear.css('opacity', 1);
+            });
+            $clear.click(function () {
+              $input.val("");
             })
         })($);
     </script>
