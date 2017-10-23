@@ -86,7 +86,7 @@
               var value = $inputer.find('input').val();
               if (!value) return alert('请先输入av号/视频链接');
               $preview.hide();
-              $preview.find('img').attr('src', '');
+              $preview.find('img').attr('src', 'https://icons8.com/preloaders/preloaders/733/Thin%2012%20segments.gif');
               $msg.show();
               $.get('/pick', {key: value}, function (response, status) {
                 if (!status) alert('请求结果失败');
