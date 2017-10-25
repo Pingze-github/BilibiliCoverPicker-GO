@@ -2,6 +2,8 @@
 <html lang="zh-CN">
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <!-- 不发Referer解决反盗链问题 -->
+        <meta name="referrer" content="never">
         <title>bilibili视频封面提取</title>
     </head>
     <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
@@ -68,7 +70,7 @@
             <div class="center-block" id="preview" style="display: none;">
                 <p>av号：<span></span></p>
                 <p>图片链接：<a></a></p>
-                <p>图片预览（点击查看原图）：</p>
+                <p>图片预览：</p>
                 <a href="#" class="thumbnail">
                     <img alt="预览图" />
                 </a>
@@ -96,8 +98,10 @@
                   $preview.find('p>span').text(avid);
                   $preview.find('p>a').attr('href', coverUrl);
                   $preview.find('p>a').text(coverUrl);
-                  $preview.find('img').attr('src', '/imgpipe?src=' + coverUrl + '@480w_300h.jpg');
-                  $preview.children('a').attr('href', '/img?src=' + 'http://' + location.host + '/imgpipe?src=' + coverUrl);
+                  //$preview.find('img').attr('src', '/imgpipe?src=' + coverUrl + '@480w_300h.jpg');
+                  //$preview.children('a').attr('href', '/img?src=' + 'http://' + location.host + '/imgpipe?src=' + coverUrl);
+                  $preview.find('img').attr('src', coverUrl);
+                  $preview.children('a').attr('href', coverUrl);
                   $msg.hide();
                   $preview.show();
                 } else {
